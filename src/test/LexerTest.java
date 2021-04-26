@@ -120,7 +120,7 @@ public class LexerTest
     @Test
     public void identifier() throws Exception
     {
-        String identifier = "_1ident_1";
+        String identifier = "_1ident_1_";
         InputStream input = new ByteArrayInputStream(identifier.getBytes(StandardCharsets.UTF_8));
         ArrayList<Token> tokens = getTokens(input);
         Assert.assertEquals(TokenType.IDENTIFIER, tokens.get(0).getType());
