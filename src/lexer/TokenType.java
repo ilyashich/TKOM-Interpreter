@@ -1,0 +1,46 @@
+package lexer;
+public enum TokenType
+{
+    IMPORT,
+    FUNCTION,
+    RETURN,
+    IF,
+    ELSE,
+    FOR,
+    WHILE,
+
+    LEFT_BRACKET,
+    RIGHT_BRACKET,
+    LEFT_CURLY_BRACKET,
+    RIGHT_CURLY_BRACKET,
+
+    ASSIGNMENT,
+    EQUALS,
+    GREATER,
+    LESS,
+    GREATER_EQUALS,
+    LESS_EQUALS,
+    NOT_EQUAL,
+    COMMA,
+    DOT,
+    SEMICOLON,
+    SLASH,
+    BACKSLASH,
+    NOT,
+
+    PLUS,
+    MINUS,
+    MULTIPLY,
+    AND,
+    OR,
+
+
+    IDENTIFIER,
+    NUMBER,
+    TEXT,
+    COMMENT,
+    COMPLEX_REAL_PART,
+    COMPLEX_IMAGINARY_PART,
+    UNKNOWN,
+    EOF
+}
