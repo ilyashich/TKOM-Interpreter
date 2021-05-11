@@ -5,6 +5,7 @@ import java.io.InputStream;
 public class Source
 {
     public static final int NEW_LINE_ASCII = 10;
+    public static final int CR = 13;
     public static final int EOF = -1;
     private Position position;
     private final InputStream inputStream;

@@ -1,8 +1,0 @@
-function "hello"
-//dsdfsdfsdfsdf
-variable = 105
-return != 23
-if N - 23
-while ( )
-for{ n = 4}
-&

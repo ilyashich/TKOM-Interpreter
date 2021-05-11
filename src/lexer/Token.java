@@ -8,7 +8,7 @@ public class Token
     private String stringValue;
     private int intValue;
     private final Position position;
-    private enum Value{STRING, NUMBER}
+    private enum Value{STRING, NUMBER, UNKNOWN}
     private final Value val;
 
     public Token(String value, TokenType type, Position position)
@@ -27,9 +27,20 @@ public class Token
         this.val = Value.NUMBER;
     }
 
+    public Token(TokenType type, Position position)
+    {
+        this.type = type;
+        this.position = position;
+        this.val = Value.UNKNOWN;
+    }
+
     @Override
     public String toString()
     {
+        if(val == Value.UNKNOWN)
+            return "Token type: " + type
+                    + ", Line: " + position.line + ", Column: " + position.column;
+
         String temp = "";
         if(val == Value.STRING)
             temp = stringValue;
