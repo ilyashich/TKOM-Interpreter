@@ -39,6 +39,7 @@ public enum TokenType
     NUMBER,
     TEXT,
     COMMENT,
+    COMPLEX,
     COMPLEX_REAL_PART,
     COMPLEX_IMAGINARY_PART,
     UNKNOWN,

@@ -28,6 +28,7 @@ public class Lexer
         tokens.put("else", TokenType.ELSE);
         tokens.put("for", TokenType.FOR);
         tokens.put("while", TokenType.WHILE);
+        tokens.put("Complex", TokenType.COMPLEX);
         tokens.put("real", TokenType.COMPLEX_REAL_PART);
         tokens.put("imag", TokenType.COMPLEX_IMAGINARY_PART);
 
