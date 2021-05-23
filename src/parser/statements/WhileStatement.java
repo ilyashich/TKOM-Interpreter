@@ -1,19 +1,20 @@
 package parser.statements;
 
+import parser.expressions.Expression;
 import parser.expressions.LogicExpression;
 
 public class WhileStatement extends Statement
 {
-    public LogicExpression condition;
+    public Expression condition;
     public StatementBlock body;
 
-    public WhileStatement(LogicExpression logicExpression, StatementBlock statementBlock)
+    public WhileStatement(Expression logicExpression, StatementBlock statementBlock)
     {
         this.condition = logicExpression;
         this.body = statementBlock;
     }
 
-    public LogicExpression getCondition()
+    public Expression getCondition()
     {
         return condition;
     }

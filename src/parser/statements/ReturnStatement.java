@@ -1,16 +1,17 @@
 package parser.statements;
 
+import parser.expressions.Expression;
 import parser.expressions.LogicExpression;
 
 public class ReturnStatement extends Statement
 {
-    public LogicExpression expression;
-    public ReturnStatement(LogicExpression expression)
+    public Expression expression;
+    public ReturnStatement(Expression expression)
     {
         this.expression = expression;
     }
 
-    public LogicExpression getExpression()
+    public Expression getExpression()
     {
         return expression;
     }

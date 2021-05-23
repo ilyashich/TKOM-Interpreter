@@ -7,15 +7,11 @@ import lexer.TokenType;
 import parser.expressions.*;
 import parser.statements.*;
 import parser.variables.Complex;
-import parser.variables.Number;
-import parser.variables.Text;
 
 import java.util.ArrayList;
 
 public class Parser
 {
-
-    private static final ArrayList<TokenType> types;
 
     private static final ArrayList<TokenType> relationalOperations;
 
@@ -27,11 +23,6 @@ public class Parser
 
     static
     {
-        types = new ArrayList<>();
-        types.add(TokenType.COMPLEX);
-        types.add(TokenType.NUMBER);
-        types.add(TokenType.TEXT);
-
         relationalOperations = new ArrayList<>();
         relationalOperations.add(TokenType.GREATER);
         relationalOperations.add(TokenType.LESS);
@@ -90,7 +81,7 @@ public class Parser
         ImportStatement temp1 = null;
         ArrayList<FunctionDefinition> functions = new ArrayList<>();
         ArrayList<ImportStatement> imports = new ArrayList<>();
-        while(currentToken.getType() != TokenType.EOF && ((temp = tryParseFunction()) != null || (temp1 = tryParseImport()) != null))
+        while((temp = tryParseFunction()) != null || (temp1 = tryParseImport()) != null)
         {
             functions.add(temp);
             imports.add(temp1);
@@ -120,11 +111,11 @@ public class Parser
         
         nextToken();
 
-        Identifier fun_id = new Identifier(expect(TokenType.IDENTIFIER).getStringValue());
+        String fun_id = expect(TokenType.IDENTIFIER).getStringValue();
 
         expect(TokenType.LEFT_BRACKET);
 
-        ArrayList<Identifier> params = tryParseFunctionParameters();
+        ArrayList<String> params = tryParseFunctionParameters();
         
         expect(TokenType.RIGHT_BRACKET);
 
@@ -137,19 +128,19 @@ public class Parser
 
     }
 
-    private ArrayList<Identifier> tryParseFunctionParameters() throws Exception
+    private ArrayList<String> tryParseFunctionParameters() throws Exception //do Poprawy
     {
         if(currentToken.getType() == TokenType.RIGHT_BRACKET)
             return null;
 
-        ArrayList<Identifier> parameterList = new ArrayList<>();
+        ArrayList<String> parameterList = new ArrayList<>();
 
-        parameterList.add(new Identifier(expect(TokenType.IDENTIFIER).getStringValue()));
+        parameterList.add(expect(TokenType.IDENTIFIER).getStringValue());
 
         while(currentToken.getType() == TokenType.COMMA)
         {
             nextToken();
-            parameterList.add(new Identifier(expect(TokenType.IDENTIFIER).getStringValue()));
+            parameterList.add(expect(TokenType.IDENTIFIER).getStringValue());
         }
 
         return parameterList;
@@ -170,22 +161,29 @@ public class Parser
                 (temp = tryParseWhileStatement()) != null ||
                 (temp = tryParseForStatement()) != null ||
                 (temp = tryParseReturnStatement()) != null ||
-                (temp = tryParseAssignStatement()) != null) {
+                (temp = tryParseAssignOrFunctionCall()) != null ){
             statements.add(temp);
         }
         expect(TokenType.RIGHT_CURLY_BRACKET);
         return new StatementBlock(statements);
     }
 
-    private AssignStatement tryParseAssignStatement() throws Exception
+    private Statement tryParseAssignOrFunctionCall() throws Exception
     {
-        LogicExpression rhs;
-        Identifier identifier;
-        TokenType field = null;
         if(currentToken.getType() != TokenType.IDENTIFIER)
             return null;
-        identifier = new Identifier(currentToken.getStringValue());
+        String identifier = currentToken.getStringValue();
         nextToken();
+        Statement statement;
+        if((statement = tryParseAssignStatement(identifier)) != null)
+            return statement;
+
+        return tryParseFunctionCallStatement(identifier);
+    }
+
+    private Statement tryParseAssignStatement(String identifier) throws Exception
+    {
+        TokenType field = null;
 
         if(currentToken.getType() == TokenType.DOT)
         {
@@ -193,9 +191,17 @@ public class Parser
             expect(complexFields);
             field = currentToken.getType();
             nextToken();
+            if(TokenType.ASSIGNMENT != currentToken.getType())
+                throw new ParserException(currentToken, TokenType.ASSIGNMENT, currentToken.getPosition());
         }
 
-        expect(TokenType.ASSIGNMENT);
+        if(currentToken.getType() != TokenType.ASSIGNMENT)
+            return null;
+
+        nextToken();
+
+        Expression rhs;
+
         if((rhs = tryParseLogicExpression()) == null)
             return null;
         expect(TokenType.SEMICOLON);
@@ -205,13 +211,13 @@ public class Parser
 
     }
 
-    private FunctionCall tryParseFunctionCall(Identifier id) throws Exception
+    private Statement tryParseFunctionCallStatement(String name) throws Exception
     {
         if(currentToken.getType() != TokenType.LEFT_BRACKET)
             return null;
         nextToken();
-        LogicExpression temp;
-        ArrayList<LogicExpression> params = new ArrayList<>();
+        Expression temp;
+        ArrayList<Expression> params = new ArrayList<>();
 
         if((temp = tryParseLogicExpression()) != null)
         {
@@ -226,7 +232,32 @@ public class Parser
             }
         }
         expect(TokenType.RIGHT_BRACKET);
-        return new FunctionCall(id, params);
+        expect(TokenType.SEMICOLON);
+        return new FunctionCallStatement(name, params);
+    }
+
+    private FunctionCallExpression tryParseFunctionCallExpression(String id) throws Exception
+    {
+        if(currentToken.getType() != TokenType.LEFT_BRACKET)
+            return null;
+        nextToken();
+        Expression temp;
+        ArrayList<Expression> params = new ArrayList<>();
+
+        if((temp = tryParseLogicExpression()) != null)
+        {
+            params.add(temp);
+
+            while(currentToken.getType() != TokenType.RIGHT_BRACKET && currentToken.getType() == TokenType.COMMA)
+            {
+                nextToken();
+                if((temp = tryParseLogicExpression()) == null)
+                    return null;
+                params.add(temp);
+            }
+        }
+        expect(TokenType.RIGHT_BRACKET);
+        return new FunctionCallExpression(id, params);
     }
 
     private Complex tryParseComplex() throws Exception
@@ -249,40 +280,22 @@ public class Parser
         return new Complex(realPart, imaginaryPart);
     }
 
-    private Text tryParseText() throws Exception
-    {
-        if (currentToken.getType() != TokenType.TEXT)
-            return null;
-        String text = currentToken.getStringValue();
-        nextToken();
-        return new Text(text);
-    }
-
-    private Number tryParseNumber() throws Exception
-    {
-        if (currentToken.getType() != TokenType.NUMBER)
-            return null;
-        int number = currentToken.getIntValue();
-        nextToken();
-        return new Number(number);
-    }
-
-    private ReturnStatement tryParseReturnStatement() throws Exception
+    private Statement tryParseReturnStatement() throws Exception
     {
         if(currentToken.getType() != TokenType.RETURN)
             return null;
         nextToken();
-        LogicExpression logicExpression;
+        Expression logicExpression;
 
         if((logicExpression = tryParseLogicExpression()) == null)
-            throw new Exception("Empty For Condition!");
+            throw new Exception("Empty return statement!");
 
         expect(TokenType.SEMICOLON);
 
         return new ReturnStatement(logicExpression);
     }
 
-    private ForStatement tryParseForStatement() throws Exception
+    private Statement tryParseForStatement() throws Exception
     {
         if(currentToken.getType() != TokenType.FOR)
             return null;
@@ -290,13 +303,15 @@ public class Parser
 
         expect(TokenType.LEFT_BRACKET);
 
-        AssignStatement iterator;
+        Statement assignStatement;
 
-        if((iterator = tryParseAssignStatement()) == null)
+        String id = expect(TokenType.IDENTIFIER).getStringValue();
+
+        if((assignStatement = tryParseAssignStatement(id)) == null)
             throw new Exception("Empty iterator assign in for loop!");
 
 
-        LogicExpression logicExpression;
+        Expression logicExpression;
 
         if((logicExpression = tryParseLogicExpression()) == null)
             throw new Exception("Empty For Condition!");
@@ -312,12 +327,12 @@ public class Parser
         if((statementBlock = tryParseBlockStatement()) == null)
             throw new Exception("Empty For Body!");
 
-        return new ForStatement(iterator.identifier, logicExpression, incrementValue, statementBlock);
+        return new ForStatement(assignStatement, logicExpression, incrementValue, statementBlock);
 
 
     }
 
-    private WhileStatement tryParseWhileStatement() throws Exception
+    private Statement tryParseWhileStatement() throws Exception
     {
         if(currentToken.getType() != TokenType.WHILE)
             return null;
@@ -325,7 +340,7 @@ public class Parser
 
         expect(TokenType.LEFT_BRACKET);
 
-        LogicExpression logicExpression;
+        Expression logicExpression;
 
         if((logicExpression = tryParseLogicExpression()) == null)
             throw new Exception("Empty While Condition!");
@@ -341,7 +356,7 @@ public class Parser
 
     }
 
-    private IfStatement tryParseIfStatement() throws Exception
+    private Statement tryParseIfStatement() throws Exception
     {
         if(currentToken.getType() != TokenType.IF)
             return null;
@@ -349,7 +364,7 @@ public class Parser
 
         expect(TokenType.LEFT_BRACKET);
 
-        LogicExpression Condition;
+        Expression Condition;
 
         if((Condition = tryParseLogicExpression()) == null)
             throw new Exception("Empty If Condition!");
@@ -375,171 +390,178 @@ public class Parser
 
     }
 
-    private LogicExpression tryParseLogicExpression() throws Exception
+    private Expression tryParseLogicExpression() throws Exception
     {
-        ArrayList<AndExpression> expressions = new ArrayList<>();
-        AndExpression andExpression;
+        Expression andExpression;
+        Expression rightAndExpression;
         if((andExpression = tryParseAndExpression()) == null)
             return null;
-
-        expressions.add(andExpression);
 
         while(currentToken.getType() == TokenType.OR)
         {
             nextToken();
-            if((andExpression = tryParseAndExpression()) == null)
+            if((rightAndExpression = tryParseAndExpression()) == null)
                 throw new Exception("There's no expression after || sign!");
 
-            expressions.add(andExpression);
+            andExpression = new LogicExpression(andExpression, rightAndExpression, TokenType.OR);
         }
-        return new LogicExpression(expressions);
+        return andExpression;
     }
 
-    private AndExpression tryParseAndExpression() throws Exception
+    private Expression tryParseAndExpression() throws Exception
     {
-        ArrayList<RelationalExpression> expressions = new ArrayList<>();
-        RelationalExpression relationalExpression;
+        Expression relationalExpression;
+        Expression rightRelationalExpression;
         if((relationalExpression = tryParseRelationalExpression()) == null)
             return null;
-
-        expressions.add(relationalExpression);
 
         while(currentToken.getType() == TokenType.AND)
         {
             nextToken();
-            if((relationalExpression = tryParseRelationalExpression()) == null)
+            if((rightRelationalExpression = tryParseRelationalExpression()) == null)
                 throw new Exception("There's no expression after && sign!");
 
-            expressions.add(relationalExpression);
+            relationalExpression = new AndExpression(relationalExpression, rightRelationalExpression, TokenType.AND);
         }
-        return new AndExpression(expressions);
+        return relationalExpression;
     }
 
-    private RelationalExpression tryParseRelationalExpression() throws Exception
+    private Expression tryParseRelationalExpression() throws Exception
     {
-        ArrayList<BaseLogicExpression> expressions = new ArrayList<>();
-        BaseLogicExpression baseLogicExpression;
+        Expression baseLogicExpression;
+        Expression rightBaseLogicExpression;
         if((baseLogicExpression = tryParseBaseLogicExpression()) == null)
             return null;
 
-        expressions.add(baseLogicExpression);
-
-        TokenType relationalOperator= null;
+        TokenType relationalOperator;
         if(relationalOperations.contains(currentToken.getType()))
         {
             relationalOperator = currentToken.getType();
             nextToken();
-            if((baseLogicExpression = tryParseBaseLogicExpression()) == null)
+            if((rightBaseLogicExpression = tryParseBaseLogicExpression()) == null)
                 throw new Exception("There's no expression after relational operator!");
 
-            expressions.add(baseLogicExpression);
+            baseLogicExpression = new RelationalExpression(baseLogicExpression, rightBaseLogicExpression, relationalOperator);
         }
-        return new RelationalExpression(expressions, relationalOperator);
+        return baseLogicExpression;
     }
 
-    private BaseLogicExpression tryParseBaseLogicExpression() throws Exception
+    private Expression tryParseBaseLogicExpression() throws Exception
     {
-        MathExpression mathExpression;
-        boolean negate = currentToken.getType() == TokenType.NOT;
+        Expression mathExpression;
+        Token temp = currentToken;
         if((mathExpression = tryParseMathExpression()) == null)
             return null;
-        return new BaseLogicExpression(negate, mathExpression);
+        if(temp.getType() == TokenType.NOT)
+        {
+            return new BaseLogicExpression(mathExpression, TokenType.NOT);
+        }
+        return mathExpression;
     }
 
-    private MathExpression tryParseMathExpression() throws Exception
+    private Expression tryParseMathExpression() throws Exception
     {
-        ArrayList<MultiplicativeExpression> expressions = new ArrayList<>();
-        ArrayList<TokenType> operators = new ArrayList<>();
-        MultiplicativeExpression multiplicativeExpression;
+        Expression multiplicativeExpression;
+        Expression rightMultiplicativeExpression;
+        TokenType operator;
         if((multiplicativeExpression = tryParseMultiplicativeExpression()) == null)
             return null;
 
-        expressions.add(multiplicativeExpression);
-        operators.add(null);
-
         while(additiveOperators.contains(currentToken.getType()))
         {
-            operators.add(currentToken.getType());
+            operator = currentToken.getType();
             nextToken();
-            if((multiplicativeExpression = tryParseMultiplicativeExpression()) == null)
+            if((rightMultiplicativeExpression = tryParseMultiplicativeExpression()) == null)
                 throw new Exception("There's no expression after additive operator!");
 
-            expressions.add(multiplicativeExpression);
+            multiplicativeExpression = new MathExpression(multiplicativeExpression, rightMultiplicativeExpression, operator);
         }
 
-        return new MathExpression(expressions,operators);
+        return multiplicativeExpression;
     }
 
-    private MultiplicativeExpression tryParseMultiplicativeExpression() throws Exception
+    private Expression tryParseMultiplicativeExpression() throws Exception
     {
-        ArrayList<BaseMathExpression> expressions = new ArrayList<>();
-        ArrayList<TokenType> operators = new ArrayList<>();
-        BaseMathExpression baseMathExpression;
+
+        Expression baseMathExpression;
+        Expression rightBaseMathExpression;
+        TokenType operator;
         if((baseMathExpression = tryParseBaseMathExpression()) == null)
             return null;
 
-        expressions.add(baseMathExpression);
-        operators.add(null);
         while(multiplicativeOperators.contains(currentToken.getType()))
         {
-            operators.add(currentToken.getType());
+            operator = currentToken.getType();
             nextToken();
-            if((baseMathExpression = tryParseBaseMathExpression()) == null)
+            if((rightBaseMathExpression = tryParseBaseMathExpression()) == null)
                 throw new Exception("There's no expression after multiplicative operator!");
 
-            expressions.add(baseMathExpression);
+            baseMathExpression = new MultiplicativeExpression(baseMathExpression, rightBaseMathExpression, operator);
         }
 
-        return new MultiplicativeExpression(expressions, operators);
+        return baseMathExpression;
     }
 
-    private BaseMathExpression tryParseBaseMathExpression() throws Exception
+    private Expression tryParseBaseMathExpression() throws Exception
     {
-        Value value;
-        LogicExpression parentLogicExpression;
-        boolean isMinus = currentToken.getType() == TokenType.MINUS;
+        Expression value;
+        Expression parentLogicExpression;
+        TokenType minus = null;
+        if(currentToken.getType() == TokenType.MINUS)
+        {
+            minus = currentToken.getType();
+            nextToken();
+        }
         if(currentToken.getType() != TokenType.LEFT_BRACKET)
         {
             if ((value = tryParseValue()) == null)
                 return null;
-            return new BaseMathExpression(isMinus, value);
+            if(minus == null)
+                return value;
+            return new BaseMathExpression(value, minus);
         }
         nextToken();
         if((parentLogicExpression = tryParseLogicExpression()) == null)
             return null;
         expect(TokenType.RIGHT_BRACKET);
-        return new BaseMathExpression(isMinus, parentLogicExpression);
+        if(minus == null)
+            return parentLogicExpression;
+        return new BaseMathExpression(parentLogicExpression, minus);
     }
 
-    private Value tryParseValue() throws Exception
+    private Expression tryParseValue() throws Exception
     {
-        Number number;
         Complex complex;
-        Variable variable;
-        FunctionCall functionCall;
-        if((number = tryParseNumber()) != null )
-            return number;
+        Expression variable;
+        FunctionCallExpression functionCall;
+        if(currentToken.getType() == TokenType.NUMBER)
+        {
+            int number = currentToken.getIntValue();
+            nextToken();
+            return new Value(TokenType.NUMBER, number);
+        }
 
         if((complex = tryParseComplex()) != null)
-            return  complex;
+            return new Value(TokenType.COMPLEX, complex);
 
         if(currentToken.getType() != TokenType.IDENTIFIER)
             return null;
 
-        Identifier name = new Identifier(currentToken.getStringValue());
+        String name = currentToken.getStringValue();
+        Token t = currentToken;
 
         nextToken();
 
-        if((functionCall = tryParseFunctionCall(name)) != null)
+        if((functionCall = tryParseFunctionCallExpression(name)) != null)
             return  functionCall;
 
-        variable = tryParseVariable(name);
+        variable = tryParseVariable(t);
 
         return variable;
 
     }
 
-    private Variable tryParseVariable(Identifier name) throws Exception
+    private Expression tryParseVariable(Token token) throws Exception
     {
         TokenType field = null;
         if(currentToken.getType() == TokenType.DOT)
@@ -547,10 +569,11 @@ public class Parser
             nextToken();
             expect(complexFields);
             field = currentToken.getType();
+            nextToken();
         }
         if(field == null)
-            return new Variable(name);
-        return new Variable(name, field);
+            return new Identifier(token);
+        return new Identifier(token, field);
     }
 
 

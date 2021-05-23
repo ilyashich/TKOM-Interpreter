@@ -3,7 +3,7 @@ package parser.variables;
 import lexer.TokenType;
 import parser.Value;
 
-public class Complex extends Value
+public class Complex
 {
     private double real;
     private double imag;
@@ -106,7 +106,8 @@ public class Complex extends Value
         return -1;
     }
 
-    public void setField(TokenType field, int value) throws Exception {
+    public void setField(TokenType field, int value)
+    {
         switch (field) {
             case COMPLEX_REAL_PART:
                 setReal(value);

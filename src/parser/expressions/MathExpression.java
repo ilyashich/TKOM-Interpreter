@@ -2,15 +2,10 @@ package parser.expressions;
 
 import lexer.TokenType;
 
-import java.util.ArrayList;
-
-public class MathExpression
+public class MathExpression extends BinaryExpression
 {
-    public ArrayList<MultiplicativeExpression> expressions;
-    public ArrayList<TokenType> operators;
-    public MathExpression(ArrayList<MultiplicativeExpression> expressions, ArrayList<TokenType> operators)
+    public MathExpression(Expression left, Expression right, TokenType operator)
     {
-        this.expressions = expressions;
-        this.operators = operators;
+        super(left, right, operator);
     }
 }

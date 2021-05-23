@@ -1,21 +1,17 @@
 package parser.expressions;
 
+import lexer.TokenType;
 import parser.Value;
 
-public class BaseMathExpression
+public class BaseMathExpression extends BinaryExpression
 {
-    public Value value;
-    public LogicExpression parentLogicExpression;
-    public boolean isMinus;
-    public BaseMathExpression(boolean isMinus, Value value)
+    public BaseMathExpression(Value value, TokenType negate)
     {
-        this.value = value;
-        this.isMinus = isMinus;
+        super(value,negate);
     }
-    public BaseMathExpression(boolean isMinus, LogicExpression parentLogicExpression)
+    public BaseMathExpression(Expression parentLogicExpression, TokenType negate)
     {
-        this.parentLogicExpression = parentLogicExpression;
-        this.isMinus = isMinus;
+        super(parentLogicExpression, negate);
     }
 
 }

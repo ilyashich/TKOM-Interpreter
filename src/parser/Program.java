@@ -1,10 +1,7 @@
 package parser;
 
 import parser.statements.ImportStatement;
-import parser.statements.Statement;
-
 import java.util.ArrayList;
-import java.util.List;
 
 public class Program
 {

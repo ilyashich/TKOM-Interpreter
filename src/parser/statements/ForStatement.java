@@ -1,16 +1,15 @@
 package parser.statements;
 
-import parser.Identifier;
-import parser.expressions.LogicExpression;
+import parser.expressions.Expression;
 
 public class ForStatement extends Statement
 {
-    public Identifier identifier;
-    public LogicExpression logicExpression;
+    public Statement identifier;
+    public Expression logicExpression;
     public int incrementValue;
     public StatementBlock statementBlock;
 
-    public ForStatement(Identifier identifier, LogicExpression logicExpression, int incrementValue, StatementBlock statementBlock)
+    public ForStatement(Statement identifier, Expression logicExpression, int incrementValue, StatementBlock statementBlock)
     {
         this.identifier = identifier;
         this.logicExpression = logicExpression;
@@ -18,12 +17,12 @@ public class ForStatement extends Statement
         this.statementBlock = statementBlock;
     }
 
-    public Identifier getIdentifier()
+    public Statement getIdentifier()
     {
         return identifier;
     }
 
-    public LogicExpression getLogicExpression()
+    public Expression getLogicExpression()
     {
         return logicExpression;
     }

@@ -1,12 +1,11 @@
 package parser.expressions;
 
-public class BaseLogicExpression
+import lexer.TokenType;
+
+public class BaseLogicExpression extends BinaryExpression
 {
-    public boolean negate;
-    public MathExpression mathExpression;
-    public BaseLogicExpression(boolean negate, MathExpression mathExpression)
+    public BaseLogicExpression(Expression mathExpression, TokenType negate)
     {
-        this.negate = negate;
-        this.mathExpression = mathExpression;
+        super(mathExpression, negate);
     }
 }

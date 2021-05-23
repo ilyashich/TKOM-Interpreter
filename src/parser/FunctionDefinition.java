@@ -8,23 +8,23 @@ import java.util.ArrayList;
 
 public class FunctionDefinition extends Statement
 {
-    private Identifier identifier;
-    private ArrayList<Identifier> params;
+    private String identifier;
+    private ArrayList<String> params;
     private StatementBlock statementBlock;
 
-    public FunctionDefinition(Identifier identifier, ArrayList<Identifier> params, StatementBlock statementBlock)
+    public FunctionDefinition(String identifier, ArrayList<String> params, StatementBlock statementBlock)
     {
         this.identifier = identifier;
         this.params = params;
         this.statementBlock = statementBlock;
     }
 
-    public Identifier getIdentifier()
+    public String getIdentifier()
     {
         return identifier;
     }
 
-    public ArrayList<Identifier> getParams()
+    public ArrayList<String> getParams()
     {
         return params;
     }

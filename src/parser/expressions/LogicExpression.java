@@ -1,12 +1,11 @@
 package parser.expressions;
 
-import java.util.ArrayList;
+import lexer.TokenType;
 
-public class LogicExpression
+public class LogicExpression extends BinaryExpression
 {
-    public ArrayList<AndExpression> expressions;
-    public LogicExpression(ArrayList<AndExpression> expressions)
+    public LogicExpression(Expression left, Expression right, TokenType operator)
     {
-        this.expressions = expressions;
+        super(left, right, operator);
     }
 }
