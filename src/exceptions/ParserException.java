@@ -6,14 +6,16 @@ import source.Position;
 
 import java.util.ArrayList;
 
-public class ParserException extends Exception {
+public class ParserException extends Exception
+{
 
-    private Token currentToken;
-    private ArrayList<TokenType> expected;
-    private Position position;
-    private String msg;
+    private final Token currentToken;
+    private final ArrayList<TokenType> expected;
+    private final Position position;
+    private final String msg;
 
-    public ParserException(Token currentToken, TokenType expected, Position position) {
+    public ParserException(Token currentToken, TokenType expected, Position position)
+    {
         this.currentToken = currentToken;
         this.expected = new ArrayList<>();
         this.expected.add(expected);
@@ -23,11 +25,16 @@ public class ParserException extends Exception {
                 " at position " + position.toString());
     }
 
-    public ParserException(String msg) {
-        this.msg = msg;
+    public ParserException(Token currentToken, String message)
+    {
+        this.currentToken = currentToken;
+        this.expected = new ArrayList<>();
+        this.position = currentToken.getPosition();
+        this.msg = message + "." + " Unexpected token " + currentToken;
     }
 
-    public ParserException(Token currentToken, ArrayList<TokenType> expected, Position position) {
+    public ParserException(Token currentToken, ArrayList<TokenType> expected, Position position)
+    {
         this.currentToken = currentToken;
         this.expected = new ArrayList<>();
         this.expected.addAll(expected);

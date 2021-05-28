@@ -43,7 +43,7 @@ public class ParserTest
     public void parseFunction() throws Exception
     {
         String txt =
-                "function main(a,b,c){}";
+                "function main(a,b,c){ a=1;}";
         init(txt);
         Assert.assertEquals(test.getFunctions().get(0).getIdentifier(), "main");
         Assert.assertEquals(test.getFunctions().get(0).getParams().get(0), "a");
@@ -55,7 +55,7 @@ public class ParserTest
     public void parseIf() throws Exception
     {
 
-        IfStatement statement = (IfStatement) setupBlockStatement("if(a + b < 5){ }").get(0);
+        IfStatement statement = (IfStatement) setupBlockStatement("if(a + b < 5){ a = b + 2; }").get(0);
         Assert.assertTrue(statement instanceof IfStatement);
         Assert.assertTrue(statement.getCondition() instanceof RelationalExpression);
         Assert.assertEquals(((RelationalExpression) statement.getCondition()).operator, TokenType.LESS);
@@ -79,7 +79,7 @@ public class ParserTest
     public void parseFor() throws Exception
     {
 
-        ForStatement statement = (ForStatement) setupBlockStatement("for(i=0; i <= 5; 3){}").get(0);
+        ForStatement statement = (ForStatement) setupBlockStatement("for(i=0; i <= 5; 3){ a = 5; a = a + 1;}").get(0);
         Assert.assertTrue(statement instanceof ForStatement);
         Assert.assertTrue(statement.getLogicExpression() instanceof RelationalExpression);
         Assert.assertEquals(((AssignStatement)statement.getIdentifier()).identifier, "i");

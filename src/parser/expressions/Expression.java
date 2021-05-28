@@ -1,5 +1,5 @@
 package parser.expressions;
 
-public class Expression
+public abstract class Expression
 {
 }

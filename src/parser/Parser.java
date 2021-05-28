@@ -121,8 +121,10 @@ public class Parser
 
         StatementBlock statementBlock;
 
+        Token temp = currentToken;
+
         if((statementBlock = tryParseBlockStatement()) == null)
-            throw new Exception("Empty Function Body!");
+            throw new ParserException(temp, "Empty Function Body!");
 
         return new FunctionDefinition(fun_id, params, statementBlock);
 
@@ -165,6 +167,8 @@ public class Parser
             statements.add(temp);
         }
         expect(TokenType.RIGHT_CURLY_BRACKET);
+        if(statements.size() == 0)
+            return null;
         return new StatementBlock(statements);
     }
 
@@ -287,8 +291,10 @@ public class Parser
         nextToken();
         Expression logicExpression;
 
+        Token temp = currentToken;
+
         if((logicExpression = tryParseLogicExpression()) == null)
-            throw new Exception("Empty return statement!");
+            throw new ParserException(temp, "Empty return statement!");
 
         expect(TokenType.SEMICOLON);
 
@@ -307,14 +313,18 @@ public class Parser
 
         String id = expect(TokenType.IDENTIFIER).getStringValue();
 
+        Token temp = currentToken;
+
         if((assignStatement = tryParseAssignStatement(id)) == null)
-            throw new Exception("Empty iterator assign in for loop!");
+            throw new ParserException(temp, "Empty iterator assign in for loop!");
 
 
         Expression logicExpression;
 
+        temp = currentToken;
+
         if((logicExpression = tryParseLogicExpression()) == null)
-            throw new Exception("Empty For Condition!");
+            throw new ParserException(temp, "Empty For Condition!");
 
         expect(TokenType.SEMICOLON);
 
@@ -324,8 +334,10 @@ public class Parser
 
         StatementBlock statementBlock;
 
+        temp = currentToken;
+
         if((statementBlock = tryParseBlockStatement()) == null)
-            throw new Exception("Empty For Body!");
+            throw new ParserException(temp, "Empty For Body!");
 
         return new ForStatement(assignStatement, logicExpression, incrementValue, statementBlock);
 
@@ -342,15 +354,19 @@ public class Parser
 
         Expression logicExpression;
 
+        Token temp = currentToken;
+
         if((logicExpression = tryParseLogicExpression()) == null)
-            throw new Exception("Empty While Condition!");
+            throw new ParserException(temp, "Empty While Condition!");
 
         expect(TokenType.RIGHT_BRACKET);
 
         StatementBlock statementBlock;
 
+        temp = currentToken;
+
         if((statementBlock = tryParseBlockStatement()) == null)
-            throw new Exception("Empty While Body!");
+            throw new ParserException(temp, "Empty While Body!");
 
         return new WhileStatement(logicExpression, statementBlock);
 
@@ -366,15 +382,19 @@ public class Parser
 
         Expression Condition;
 
+        Token temp = currentToken;
+
         if((Condition = tryParseLogicExpression()) == null)
-            throw new Exception("Empty If Condition!");
+            throw new ParserException(temp, "Empty If Condition!");
 
         expect(TokenType.RIGHT_BRACKET);
 
         StatementBlock ifBody;
 
+        temp = currentToken;
+
         if((ifBody = tryParseBlockStatement()) == null)
-            throw new Exception("Empty If Body!");
+            throw new ParserException(temp, "Empty If Body!");
 
         StatementBlock elseBody = null;
 
@@ -382,8 +402,10 @@ public class Parser
         {
             nextToken();
 
+            temp = currentToken;
+
             if ((elseBody = tryParseBlockStatement()) == null)
-                throw new Exception("Empty Else Body!");
+                throw new ParserException(temp, "Empty Else Body!");
         }
 
         return new IfStatement(Condition, ifBody, elseBody);
@@ -394,14 +416,16 @@ public class Parser
     {
         Expression andExpression;
         Expression rightAndExpression;
+        Token temp;
         if((andExpression = tryParseAndExpression()) == null)
             return null;
 
         while(currentToken.getType() == TokenType.OR)
         {
             nextToken();
+            temp = currentToken;
             if((rightAndExpression = tryParseAndExpression()) == null)
-                throw new Exception("There's no expression after || sign!");
+                throw new ParserException(temp, "There's no expression after || sign!");
 
             andExpression = new LogicExpression(andExpression, rightAndExpression, TokenType.OR);
         }
@@ -412,14 +436,16 @@ public class Parser
     {
         Expression relationalExpression;
         Expression rightRelationalExpression;
+        Token temp;
         if((relationalExpression = tryParseRelationalExpression()) == null)
             return null;
 
         while(currentToken.getType() == TokenType.AND)
         {
             nextToken();
+            temp = currentToken;
             if((rightRelationalExpression = tryParseRelationalExpression()) == null)
-                throw new Exception("There's no expression after && sign!");
+                throw new ParserException(temp, "There's no expression after && sign!");
 
             relationalExpression = new AndExpression(relationalExpression, rightRelationalExpression, TokenType.AND);
         }
@@ -430,6 +456,7 @@ public class Parser
     {
         Expression baseLogicExpression;
         Expression rightBaseLogicExpression;
+        Token temp;
         if((baseLogicExpression = tryParseBaseLogicExpression()) == null)
             return null;
 
@@ -438,8 +465,9 @@ public class Parser
         {
             relationalOperator = currentToken.getType();
             nextToken();
+            temp = currentToken;
             if((rightBaseLogicExpression = tryParseBaseLogicExpression()) == null)
-                throw new Exception("There's no expression after relational operator!");
+                throw new ParserException(temp, "There's no expression after relational operator!");
 
             baseLogicExpression = new RelationalExpression(baseLogicExpression, rightBaseLogicExpression, relationalOperator);
         }
@@ -464,6 +492,7 @@ public class Parser
         Expression multiplicativeExpression;
         Expression rightMultiplicativeExpression;
         TokenType operator;
+        Token temp;
         if((multiplicativeExpression = tryParseMultiplicativeExpression()) == null)
             return null;
 
@@ -471,8 +500,9 @@ public class Parser
         {
             operator = currentToken.getType();
             nextToken();
+            temp = currentToken;
             if((rightMultiplicativeExpression = tryParseMultiplicativeExpression()) == null)
-                throw new Exception("There's no expression after additive operator!");
+                throw new ParserException(temp, "There's no expression after additive operator!");
 
             multiplicativeExpression = new MathExpression(multiplicativeExpression, rightMultiplicativeExpression, operator);
         }
@@ -486,6 +516,7 @@ public class Parser
         Expression baseMathExpression;
         Expression rightBaseMathExpression;
         TokenType operator;
+        Token temp;
         if((baseMathExpression = tryParseBaseMathExpression()) == null)
             return null;
 
@@ -493,8 +524,9 @@ public class Parser
         {
             operator = currentToken.getType();
             nextToken();
+            temp = currentToken;
             if((rightBaseMathExpression = tryParseBaseMathExpression()) == null)
-                throw new Exception("There's no expression after multiplicative operator!");
+                throw new ParserException(temp, "There's no expression after multiplicative operator!");
 
             baseMathExpression = new MultiplicativeExpression(baseMathExpression, rightBaseMathExpression, operator);
         }
