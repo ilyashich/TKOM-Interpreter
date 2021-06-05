@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="tkom-print">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/tkom-print.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

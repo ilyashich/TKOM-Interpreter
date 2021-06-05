@@ -27,6 +27,9 @@ public class Source
                 position.line++;
             }
             else
+                if(character == '\t')
+                    position.column = position.column + 4;
+            else
                 position.column++;
             return character;
         }

@@ -4,10 +4,10 @@ import lexer.Lexer;
 import lexer.TokenType;
 import org.junit.Assert;
 import org.junit.Test;
-import parser.Identifier;
+import parser.variables.Identifier;
 import parser.Parser;
-import parser.Program;
-import parser.Value;
+import interpreter.Program;
+import parser.variables.Value;
 import parser.expressions.*;
 import parser.statements.*;
 import parser.variables.Complex;
@@ -35,7 +35,8 @@ public class ParserTest
         InputStream in = new ByteArrayInputStream(code.getBytes(StandardCharsets.UTF_8));
         Lexer lexer = new Lexer(in);
         Parser parser = new Parser(lexer);
-        return  parser.tryParseProgram().getFunctions().get(0).getStatementBlock().statements;
+        parser.tryParseProgram();
+        return Program.getFunctions().get(0).getStatementBlock().statements;
     }
 
 
@@ -45,10 +46,10 @@ public class ParserTest
         String txt =
                 "function main(a,b,c){ a=1;}";
         init(txt);
-        Assert.assertEquals(test.getFunctions().get(0).getIdentifier(), "main");
-        Assert.assertEquals(test.getFunctions().get(0).getParams().get(0), "a");
-        Assert.assertEquals(test.getFunctions().get(0).getParams().get(1), "b");
-        Assert.assertEquals(test.getFunctions().get(0).getParams().get(2), "c");
+        Assert.assertEquals(Program.getFunctions().get(0).getIdentifier(), "main");
+        Assert.assertEquals(Program.getFunctions().get(0).getParams().get(0), "a");
+        Assert.assertEquals(Program.getFunctions().get(0).getParams().get(1), "b");
+        Assert.assertEquals(Program.getFunctions().get(0).getParams().get(2), "c");
     }
 
     @Test
@@ -56,10 +57,10 @@ public class ParserTest
     {
 
         IfStatement statement = (IfStatement) setupBlockStatement("if(a + b < 5){ a = b + 2; }").get(0);
-        Assert.assertTrue(statement instanceof IfStatement);
+        Assert.assertNotNull(statement);
         Assert.assertTrue(statement.getCondition() instanceof RelationalExpression);
-        Assert.assertEquals(((RelationalExpression) statement.getCondition()).operator, TokenType.LESS);
-        Assert.assertEquals(((MathExpression) ((RelationalExpression) statement.getCondition()).left).operator, TokenType.PLUS);
+        Assert.assertEquals(((RelationalExpression) statement.getCondition()).operator.getType(), TokenType.LESS);
+        Assert.assertEquals(((MathExpression) ((RelationalExpression) statement.getCondition()).left).operator.getType(), TokenType.PLUS);
 
     }
 
@@ -68,9 +69,9 @@ public class ParserTest
     {
 
         WhileStatement statement = (WhileStatement) setupBlockStatement("while(a != 5){ a = a+5; }").get(0);
-        Assert.assertTrue(statement instanceof WhileStatement);
+        Assert.assertNotNull(statement);
         Assert.assertTrue(statement.getCondition() instanceof RelationalExpression);
-        Assert.assertEquals(((RelationalExpression) statement.getCondition()).operator, TokenType.NOT_EQUAL);
+        Assert.assertEquals(((RelationalExpression) statement.getCondition()).operator.getType(), TokenType.NOT_EQUAL);
         Assert.assertTrue(((AssignStatement) statement.body.statements.get(0)).rhs instanceof MathExpression);
 
     }
@@ -80,10 +81,10 @@ public class ParserTest
     {
 
         ForStatement statement = (ForStatement) setupBlockStatement("for(i=0; i <= 5; 3){ a = 5; a = a + 1;}").get(0);
-        Assert.assertTrue(statement instanceof ForStatement);
+        Assert.assertNotNull(statement);
         Assert.assertTrue(statement.getLogicExpression() instanceof RelationalExpression);
         Assert.assertEquals(((AssignStatement)statement.getIdentifier()).identifier, "i");
-        Assert.assertEquals(((RelationalExpression) statement.getLogicExpression()).operator, TokenType.LESS_EQUALS);
+        Assert.assertEquals(((RelationalExpression) statement.getLogicExpression()).operator.getType(), TokenType.LESS_EQUALS);
         Assert.assertEquals(statement.getIncrementValue(), 3);
 
     }
@@ -93,10 +94,10 @@ public class ParserTest
     {
 
         AssignStatement statement = (AssignStatement) setupBlockStatement("a = hello(a+b, 7);").get(0);
-        Assert.assertTrue(statement instanceof AssignStatement);
+        Assert.assertNotNull(statement);
         Assert.assertTrue(statement.rhs instanceof FunctionCallExpression);
         Assert.assertEquals(((Value)((FunctionCallExpression) statement.rhs).parameters.get(1)).value, 7);
-        Assert.assertEquals(((MathExpression)((FunctionCallExpression) statement.rhs).parameters.get(0)).operator, TokenType.PLUS);
+        Assert.assertEquals(((MathExpression)((FunctionCallExpression) statement.rhs).parameters.get(0)).operator.getType(), TokenType.PLUS);
         Assert.assertEquals(((Identifier)((MathExpression)((FunctionCallExpression) statement.rhs).parameters.get(0)).left).name, "a");
         Assert.assertEquals(statement.identifier, "a");
 
@@ -107,9 +108,9 @@ public class ParserTest
     {
 
         AssignStatement statement = (AssignStatement) setupBlockStatement("b = Complex(2, 5);").get(0);
-        Assert.assertTrue(statement instanceof AssignStatement);
+        Assert.assertNotNull(statement);
         Assert.assertTrue(statement.rhs instanceof Value);
-        Assert.assertEquals(((Complex) ((Value) statement.rhs).value).compare(new Complex(2,5)), 0);
+        Assert.assertTrue(((Complex) ((Value) statement.rhs).value).equals(new Complex(2,5)));
         Assert.assertEquals(statement.identifier, "b");
 
     }
@@ -119,7 +120,7 @@ public class ParserTest
     {
 
         AssignStatement statement = (AssignStatement) setupBlockStatement("b.imag = 5;").get(0);
-        Assert.assertTrue(statement instanceof AssignStatement);
+        Assert.assertNotNull(statement);
         Assert.assertTrue(statement.rhs instanceof Value);
         Assert.assertEquals(statement.identifier, "b");
         Assert.assertEquals(statement.complexField, TokenType.COMPLEX_IMAGINARY_PART);
@@ -130,10 +131,10 @@ public class ParserTest
     public void parseImport() throws Exception
     {
 
-        String txt = "import\"io\"";
+        String txt = "import\"hello.txt\"";
         init(txt);
-        Assert.assertTrue(test.getImports().get(0) instanceof ImportStatement);
-        Assert.assertEquals(test.getImports().get(0).getFileName(), "io");
+        Assert.assertNotNull(test.getImports().get(0));
+        Assert.assertEquals(test.getImports().get(0).getFileName(), "hello.txt");
 
     }
 
@@ -142,7 +143,7 @@ public class ParserTest
     {
 
         ReturnStatement statement = (ReturnStatement) setupBlockStatement("return 0;").get(0);
-        Assert.assertTrue(statement instanceof ReturnStatement);
+        Assert.assertNotNull(statement);
         Assert.assertTrue(statement.expression instanceof Value);
         Assert.assertEquals(((Value) statement.expression).value, 0);
 
@@ -153,7 +154,7 @@ public class ParserTest
     {
 
         FunctionCallStatement statement = (FunctionCallStatement) setupBlockStatement("MyFunction(a.real,b,c);").get(0);
-        Assert.assertTrue(statement instanceof FunctionCallStatement);
+        Assert.assertNotNull(statement);
         Assert.assertTrue(statement.params.get(0) instanceof Identifier);
         Assert.assertEquals(((Identifier)statement.params.get(0)).name, "a");
         Assert.assertEquals(((Identifier)statement.params.get(0)).field, TokenType.COMPLEX_REAL_PART);

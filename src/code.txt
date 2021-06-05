@@ -1,0 +1,20 @@
+import "hello.txt"
+function main()
+{
+	a=5;
+	b=4;
+	d = "Hello";
+	string = "Hello";
+	c=Complex(7,5);
+    print(c);
+    print(modulus(c));
+    string = string + " " + a + " times";
+    print(string);
+
+    lol = 5.37465786745;
+    es= 6;
+    c.imag = pow(es, 2.1);
+    print(myFunction(a, b, c));
+
+    return 0;
+}

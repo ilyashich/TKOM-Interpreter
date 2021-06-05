@@ -1,7 +1,7 @@
 package parser.statements;
 
+import interpreter.Scope;
 import parser.expressions.Expression;
-import parser.expressions.LogicExpression;
 
 public class WhileStatement extends Statement
 {
@@ -22,6 +22,25 @@ public class WhileStatement extends Statement
     public StatementBlock getBody()
     {
         return body;
+    }
+
+    @Override
+    public Object execute(Scope scope) throws Exception
+    {
+
+        while((Boolean) condition.evaluate(scope))
+        {
+            for (Statement statement : body.statements)
+            {
+                if(statement instanceof ReturnStatement)
+                {
+                    return statement;
+                }
+                statement.execute(scope);
+            }
+        }
+        return null;
+
     }
 
 }

@@ -5,9 +5,10 @@ import lexer.Token;
 import lexer.TokenType;
 import org.junit.Assert;
 import org.junit.Test;
-import source.Position;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
@@ -49,6 +50,21 @@ public class LexerTest
         Assert.assertEquals(TokenType.NUMBER, tokens.get(3).getType());
         Assert.assertEquals(TokenType.NUMBER, tokens.get(4).getType());
         Assert.assertEquals(12, tokens.get(4).getIntValue());
+    }
+    @Test
+    public void doubleNumber() throws Exception
+    {
+        String numbers = "5.0005456 25 0.rey 1.5 0..3456dfh";
+        InputStream input = new ByteArrayInputStream(numbers.getBytes(StandardCharsets.UTF_8));
+        ArrayList<Token> tokens = getTokens(input);
+        Assert.assertEquals(TokenType.FLOAT, tokens.get(0).getType());
+        Assert.assertEquals(new BigDecimal("5.0005456"), tokens.get(0).getDoubleValue());
+        Assert.assertEquals(TokenType.NUMBER, tokens.get(1).getType());
+        Assert.assertEquals(25, tokens.get(1).getIntValue());
+        Assert.assertEquals(TokenType.UNKNOWN, tokens.get(2).getType());
+        Assert.assertEquals(TokenType.FLOAT, tokens.get(3).getType());
+        Assert.assertEquals(new BigDecimal("1.5"), tokens.get(3).getDoubleValue());
+        Assert.assertEquals(TokenType.UNKNOWN, tokens.get(4).getType());
     }
     @Test
     public void consString() throws Exception

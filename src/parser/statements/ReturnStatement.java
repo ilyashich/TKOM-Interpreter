@@ -1,7 +1,7 @@
 package parser.statements;
 
+import interpreter.Scope;
 import parser.expressions.Expression;
-import parser.expressions.LogicExpression;
 
 public class ReturnStatement extends Statement
 {
@@ -14,5 +14,11 @@ public class ReturnStatement extends Statement
     public Expression getExpression()
     {
         return expression;
+    }
+
+    @Override
+    public Object execute(Scope scope) throws Exception
+    {
+        return expression.evaluate(scope);
     }
 }

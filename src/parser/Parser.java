@@ -1,13 +1,17 @@
 package parser;
 
 import exceptions.ParserException;
+import interpreter.Program;
 import lexer.Lexer;
 import lexer.Token;
 import lexer.TokenType;
 import parser.expressions.*;
 import parser.statements.*;
 import parser.variables.Complex;
+import parser.variables.Identifier;
+import parser.variables.Value;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 
 public class Parser
@@ -20,6 +24,8 @@ public class Parser
     private static final ArrayList<TokenType> additiveOperators;
 
     private static final ArrayList<TokenType> multiplicativeOperators;
+
+    private static final ArrayList<TokenType> numberOrDouble;
 
     static
     {
@@ -42,6 +48,10 @@ public class Parser
         multiplicativeOperators= new ArrayList<>();
         multiplicativeOperators.add(TokenType.MULTIPLY);
         multiplicativeOperators.add(TokenType.SLASH);
+
+        numberOrDouble = new ArrayList<>();
+        numberOrDouble.add(TokenType.NUMBER);
+        numberOrDouble.add(TokenType.FLOAT);
     }
 
     private Token currentToken;
@@ -58,14 +68,14 @@ public class Parser
         currentToken = lexer.getNext();
     }
 
-    private void expect(ArrayList<TokenType> acceptableTokens) throws ParserException
+    public void expect(ArrayList<TokenType> acceptableTokens) throws ParserException
     {
         if(!acceptableTokens.contains(currentToken.getType()))
             throw new ParserException(currentToken, acceptableTokens, currentToken.getPosition());
 
     }
 
-    private Token expect(TokenType acceptableToken) throws Exception
+    public Token expect(TokenType acceptableToken) throws Exception
     {
         if(acceptableToken != currentToken.getType())
             throw new ParserException(currentToken, acceptableToken, currentToken.getPosition());
@@ -83,8 +93,10 @@ public class Parser
         ArrayList<ImportStatement> imports = new ArrayList<>();
         while((temp = tryParseFunction()) != null || (temp1 = tryParseImport()) != null)
         {
-            functions.add(temp);
-            imports.add(temp1);
+            if(temp != null)
+                functions.add(temp);
+            if(temp1 != null)
+                imports.add(temp1);
         }
         expect(TokenType.EOF);
         return new Program(functions, imports);
@@ -104,7 +116,7 @@ public class Parser
         return new ImportStatement(fileName);
     }
 
-    private FunctionDefinition tryParseFunction() throws Exception
+    public FunctionDefinition tryParseFunction() throws Exception
     {
         if(currentToken.getType() != TokenType.FUNCTION)
             return null;
@@ -163,13 +175,23 @@ public class Parser
                 (temp = tryParseWhileStatement()) != null ||
                 (temp = tryParseForStatement()) != null ||
                 (temp = tryParseReturnStatement()) != null ||
-                (temp = tryParseAssignOrFunctionCall()) != null ){
+                (temp = tryParseAssignOrFunctionCall()) != null ||
+                (temp = tryParseComment()) != null){
             statements.add(temp);
         }
         expect(TokenType.RIGHT_CURLY_BRACKET);
         if(statements.size() == 0)
             return null;
         return new StatementBlock(statements);
+    }
+
+    private Statement tryParseComment() throws Exception
+    {
+        if(currentToken.getType() != TokenType.COMMENT)
+            return null;
+        CommentStatement comment = new CommentStatement(currentToken.getStringValue());
+        nextToken();
+        return comment;
     }
 
     private Statement tryParseAssignOrFunctionCall() throws Exception
@@ -273,15 +295,48 @@ public class Parser
 
         expect(TokenType.LEFT_BRACKET);
 
-        int realPart = expect(TokenType.NUMBER).getIntValue();
+        BigDecimal realPart = tryParseComplexFields();
+
+        nextToken();
 
         expect(TokenType.COMMA);
 
-        int imaginaryPart = expect(TokenType.NUMBER).getIntValue();
+        BigDecimal imaginaryPart = tryParseComplexFields();
+
+        nextToken();
 
         expect(TokenType.RIGHT_BRACKET);
 
-        return new Complex(realPart, imaginaryPart);
+        return new Complex(realPart.doubleValue(), imaginaryPart.doubleValue());
+    }
+
+    private BigDecimal tryParseComplexFields() throws Exception
+    {
+        if(currentToken.getType() == TokenType.MINUS)
+        {
+            nextToken();
+            expect(numberOrDouble);
+            if(currentToken.getType() == TokenType.NUMBER)
+            {
+                return new BigDecimal(-currentToken.getIntValue());
+            }
+            else
+            {
+                return new BigDecimal("-" + currentToken.getDoubleValue());
+            }
+        }
+        else
+        {
+            expect(numberOrDouble);
+            if(currentToken.getType() == TokenType.NUMBER)
+            {
+                return new BigDecimal(currentToken.getIntValue());
+            }
+            else
+            {
+                return currentToken.getDoubleValue();
+            }
+        }
     }
 
     private Statement tryParseReturnStatement() throws Exception
@@ -416,18 +471,19 @@ public class Parser
     {
         Expression andExpression;
         Expression rightAndExpression;
-        Token temp;
+        Token temp, temp2;
         if((andExpression = tryParseAndExpression()) == null)
             return null;
 
         while(currentToken.getType() == TokenType.OR)
         {
+            temp2 = currentToken;
             nextToken();
             temp = currentToken;
             if((rightAndExpression = tryParseAndExpression()) == null)
                 throw new ParserException(temp, "There's no expression after || sign!");
 
-            andExpression = new LogicExpression(andExpression, rightAndExpression, TokenType.OR);
+            andExpression = new LogicExpression(andExpression, rightAndExpression, temp2);
         }
         return andExpression;
     }
@@ -436,18 +492,19 @@ public class Parser
     {
         Expression relationalExpression;
         Expression rightRelationalExpression;
-        Token temp;
+        Token temp, temp2;
         if((relationalExpression = tryParseRelationalExpression()) == null)
             return null;
 
         while(currentToken.getType() == TokenType.AND)
         {
+            temp2 = currentToken;
             nextToken();
             temp = currentToken;
             if((rightRelationalExpression = tryParseRelationalExpression()) == null)
                 throw new ParserException(temp, "There's no expression after && sign!");
 
-            relationalExpression = new AndExpression(relationalExpression, rightRelationalExpression, TokenType.AND);
+            relationalExpression = new AndExpression(relationalExpression, rightRelationalExpression, temp2);
         }
         return relationalExpression;
     }
@@ -456,14 +513,13 @@ public class Parser
     {
         Expression baseLogicExpression;
         Expression rightBaseLogicExpression;
-        Token temp;
+        Token temp, relationalOperator;
         if((baseLogicExpression = tryParseBaseLogicExpression()) == null)
             return null;
 
-        TokenType relationalOperator;
         if(relationalOperations.contains(currentToken.getType()))
         {
-            relationalOperator = currentToken.getType();
+            relationalOperator = currentToken;
             nextToken();
             temp = currentToken;
             if((rightBaseLogicExpression = tryParseBaseLogicExpression()) == null)
@@ -477,12 +533,17 @@ public class Parser
     private Expression tryParseBaseLogicExpression() throws Exception
     {
         Expression mathExpression;
-        Token temp = currentToken;
+        Token negate = null;
+        if(currentToken.getType() == TokenType.NOT)
+        {
+            negate = currentToken;
+            nextToken();
+        }
         if((mathExpression = tryParseMathExpression()) == null)
             return null;
-        if(temp.getType() == TokenType.NOT)
+        if(negate != null)
         {
-            return new BaseLogicExpression(mathExpression, TokenType.NOT);
+            return new BaseLogicExpression(mathExpression, negate);
         }
         return mathExpression;
     }
@@ -491,14 +552,13 @@ public class Parser
     {
         Expression multiplicativeExpression;
         Expression rightMultiplicativeExpression;
-        TokenType operator;
-        Token temp;
+        Token temp, operator;
         if((multiplicativeExpression = tryParseMultiplicativeExpression()) == null)
             return null;
 
         while(additiveOperators.contains(currentToken.getType()))
         {
-            operator = currentToken.getType();
+            operator = currentToken;
             nextToken();
             temp = currentToken;
             if((rightMultiplicativeExpression = tryParseMultiplicativeExpression()) == null)
@@ -515,14 +575,13 @@ public class Parser
 
         Expression baseMathExpression;
         Expression rightBaseMathExpression;
-        TokenType operator;
-        Token temp;
+        Token temp, operator;
         if((baseMathExpression = tryParseBaseMathExpression()) == null)
             return null;
 
         while(multiplicativeOperators.contains(currentToken.getType()))
         {
-            operator = currentToken.getType();
+            operator = currentToken;
             nextToken();
             temp = currentToken;
             if((rightBaseMathExpression = tryParseBaseMathExpression()) == null)
@@ -538,10 +597,10 @@ public class Parser
     {
         Expression value;
         Expression parentLogicExpression;
-        TokenType minus = null;
+        Token minus = null;
         if(currentToken.getType() == TokenType.MINUS)
         {
-            minus = currentToken.getType();
+            minus = currentToken;
             nextToken();
         }
         if(currentToken.getType() != TokenType.LEFT_BRACKET)
@@ -566,15 +625,35 @@ public class Parser
         Complex complex;
         Expression variable;
         FunctionCallExpression functionCall;
+        Token token;
         if(currentToken.getType() == TokenType.NUMBER)
         {
             int number = currentToken.getIntValue();
+            token = currentToken;
             nextToken();
-            return new Value(TokenType.NUMBER, number);
+            return new Value(token, number);
         }
 
+        if(currentToken.getType() == TokenType.FLOAT)
+        {
+            BigDecimal number = currentToken.getDoubleValue();
+            token = currentToken;
+            nextToken();
+            return new Value(token, number);
+        }
+
+        if(currentToken.getType() == TokenType.TEXT)
+        {
+            String text = currentToken.getStringValue();
+            token = currentToken;
+            nextToken();
+            return new Value(token, text);
+        }
+
+        token = currentToken;
+
         if((complex = tryParseComplex()) != null)
-            return new Value(TokenType.COMPLEX, complex);
+            return new Value(token, complex);
 
         if(currentToken.getType() != TokenType.IDENTIFIER)
             return null;

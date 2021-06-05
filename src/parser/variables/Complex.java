@@ -1,7 +1,6 @@
 package parser.variables;
 
 import lexer.TokenType;
-import parser.Value;
 
 public class Complex
 {
@@ -46,7 +45,7 @@ public class Complex
                 this.imag + other.imag);
     }
 
-    public Complex add(Integer other)
+    public Complex add(double other)
     {
         return new Complex(this.real + other, this.imag);
     }
@@ -57,7 +56,12 @@ public class Complex
                 this.imag - other.imag);
     }
 
-    public Complex subtract(Integer other)
+    public Complex subtractComplexFromInteger(double other)
+    {
+        return new Complex(other - this.real, -this.imag);
+    }
+
+    public Complex subtract(double other)
     {
         return new Complex(this.real - other, this.imag);
     }
@@ -68,32 +72,54 @@ public class Complex
                 this.imag * other.real + this.real * other.imag);
     }
 
-    public Complex multiply(Integer other)
+    public Complex multiply(double other)
     {
         return new Complex(this.real * other,this.imag * other);
     }
 
     public Complex divide(Complex other)
     {
-        return new Complex((this.real * other.real + this.imag * other.imag)/other.real*other.real + other.imag * other.imag,
-                this.imag * other.real + this.real * other.imag);
+        return new Complex((this.real * other.real + this.imag * other.imag)/(other.real*other.real + other.imag * other.imag),
+                (this.imag * other.real - this.real * other.imag)/(other.real*other.real + other.imag * other.imag));
     }
 
-    public Complex divide(Integer other)
+    public Complex divideIntegerByComplex(double other)
+    {
+        return new Complex((this.real * other)/other*other,
+            (this.imag * other)/other*other);
+    }
+
+    public Complex divide(double other)
     {
         return new Complex(this.real / other,this.imag / other);
     }
 
-    public Complex conjugate(Complex complex)
+    public Complex conjugate()
     {
-        Complex c = new Complex(complex);
+        Complex c = new Complex(this);
         c.imag = -c.imag;
         return c;
     }
 
-    public double modulus(Complex complex)
+    public Complex inverse()
     {
-        return Math.sqrt(complex.real*complex.real + complex.imag * complex.imag);
+        this.real = -this.real;
+        this.imag = -this.imag;
+        return this;
+    }
+
+    public Complex power(double power)
+    {
+        double theta = StrictMath.atan2(this.imag, this.real);
+        double modulusPow = StrictMath.pow(this.modulus(), power);
+        double cos = StrictMath.cos(power * theta);
+        double sin = StrictMath.sin(power * theta);
+        return new Complex(modulusPow * cos, modulusPow * sin);
+    }
+
+    public double modulus()
+    {
+        return Math.sqrt(this.real*this.real + this.imag * this.imag);
     }
 
     public double getField(TokenType field) {
@@ -106,7 +132,7 @@ public class Complex
         return -1;
     }
 
-    public void setField(TokenType field, int value)
+    public void setField(TokenType field, double value)
     {
         switch (field) {
             case COMPLEX_REAL_PART:
@@ -118,13 +144,21 @@ public class Complex
         }
     }
 
-    public int compare(Complex other)
+    public boolean equals(Complex other)
     {
-        if((this.real == other.real) && (this.imag == other.imag))
-            return 0;
-        if(this.real < other.real || (this.real == other.real && this.imag < other.imag))
-            return 1;
-        else
-            return -1;
+        return (this.real == other.real) && (this.imag == other.imag);
+
+    }
+
+    @Override
+    public String toString()
+    {
+        if(this.imag == 0)
+            return Double.toString(this.real);
+        if(this.real == 0)
+            return this.imag + "* i ";
+        if(this.imag > 0)
+            return this.real + " + " + this.imag + " * i ";
+        return this.real + " - " + (-this.imag) + " * i ";
     }
 }

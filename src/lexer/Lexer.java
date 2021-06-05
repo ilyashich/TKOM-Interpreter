@@ -3,11 +3,12 @@ package lexer;
 import exceptions.IdentifierIsTooLargeException;
 import exceptions.IntegerIsTooBigException;
 import exceptions.StringIsTooLargeException;
-import source.Source;
 import source.Position;
+import source.Source;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.HashMap;
 
 public class Lexer
@@ -107,6 +108,28 @@ public class Lexer
         {
             nextChar();
 
+            if(currentChar == '.')
+            {
+                nextChar();
+                if(!Character.isDigit(currentChar))
+                {
+                    while(!Character.isWhitespace(currentChar) && currentChar != Source.EOF)
+                    {
+                        nextChar();
+                    }
+                    return new Token(TokenType.UNKNOWN, textPosition);
+                }
+                identifier.append("0.");
+                while (Character.isDigit(currentChar))
+                {
+                    identifier.append((char)currentChar);
+                    nextChar();
+                }
+
+                BigDecimal dvalue = new BigDecimal(identifier.toString());
+                return new Token(dvalue, TokenType.FLOAT, textPosition);
+            }
+
             if(!Character.isDigit(currentChar))
                 return new Token(0, TokenType.NUMBER, textPosition);
 
@@ -122,6 +145,29 @@ public class Lexer
             {
                 val = val * 10 + (currentChar - '0');
                 nextChar();
+            }
+            if(currentChar == '.')
+            {
+                nextChar();
+                identifier = new StringBuilder();
+                identifier.append(val);
+                identifier.append(".");
+
+                if(!Character.isDigit(currentChar))
+                {
+                    while(!Character.isWhitespace(currentChar))
+                    {
+                        nextChar();
+                    }
+                    return new Token(TokenType.UNKNOWN, textPosition);
+                }
+                while (Character.isDigit(currentChar))
+                {
+                    identifier.append((char)currentChar);
+                    nextChar();
+                }
+                BigDecimal dvalue = new BigDecimal(identifier.toString());
+                return new Token(dvalue, TokenType.FLOAT, textPosition);
             }
         }
 

@@ -1,5 +1,6 @@
 package parser.statements;
 
+import interpreter.Scope;
 import parser.expressions.Expression;
 
 public class ForStatement extends Statement
@@ -35,5 +36,26 @@ public class ForStatement extends Statement
     public StatementBlock getStatementBlock()
     {
         return statementBlock;
+    }
+
+    @Override
+    public Object execute(Scope scope) throws Exception
+    {
+        Object id = identifier.execute(scope);
+        String iteratorName = ((AssignStatement)identifier).identifier;
+        while((Boolean) logicExpression.evaluate(scope))
+        {
+            for (Statement statement : statementBlock.statements)
+            {
+                if(statement instanceof ReturnStatement)
+                {
+                    return statement;
+                }
+                statement.execute(scope);
+            }
+            Object iterValue = (int)scope.getVar(iteratorName).value + incrementValue;
+            scope.setVarValue(iteratorName, iterValue);
+        }
+        return null;
     }
 }

@@ -2,13 +2,16 @@ package lexer;
 
 import source.Position;
 
+import java.math.BigDecimal;
+
 public class Token
 {
     private final TokenType type;
     private String stringValue;
     private int intValue;
+    private BigDecimal doubleValue;
     private final Position position;
-    private enum Value{STRING, NUMBER, UNKNOWN}
+    private enum Value{STRING, NUMBER, FLOAT, UNKNOWN}
     private final Value val;
 
     public Token(String value, TokenType type, Position position)
@@ -25,6 +28,14 @@ public class Token
         this.position = position;
         this.type = type;
         this.val = Value.NUMBER;
+    }
+
+    public Token(BigDecimal value, TokenType type, Position position)
+    {
+        this.doubleValue = value;
+        this.position = position;
+        this.type = type;
+        this.val = Value.FLOAT;
     }
 
     public Token(TokenType type, Position position)
@@ -46,6 +57,8 @@ public class Token
             temp = stringValue;
         if(val == Value.NUMBER)
             temp = Integer.toString(intValue);
+        if(val == Value.FLOAT)
+            temp = Double.toString(intValue);
         return "Value: " + temp + ", Token type: " + type
                 + ", Line: " + position.line + ", Column: " + position.column;
     }
@@ -63,6 +76,11 @@ public class Token
     public int getIntValue()
     {
         return intValue;
+    }
+
+    public BigDecimal getDoubleValue()
+    {
+        return doubleValue;
     }
 
     public Position getPosition()
