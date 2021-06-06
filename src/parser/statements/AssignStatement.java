@@ -30,17 +30,7 @@ public class AssignStatement extends Statement
     {
         if(!scope.contains(this.identifier))
             scope.putVar(new Variable(this));
-//        Variable variable = scope.getVar(this.identifier);
-//        TokenType variableType = variable.type;
         Object val = this.rhs.evaluate(scope);
-
-//        if (val instanceof String && variableType != TokenType.TEXT
-//                || val instanceof Integer && variableType != TokenType.NUMBER
-//                || val instanceof Complex && variableType != TokenType.COMPLEX
-//        )
-//        {
-//            throw new Exception("próba przypisania do zmiennej: " + identifier + ", o typie: "+ variableType.name() + " wartość innego typu");
-//        }
 
         if(complexField != null)
             scope.setComplexFieldValue(this.identifier, this.complexField, val);

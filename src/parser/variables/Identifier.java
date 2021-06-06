@@ -33,7 +33,8 @@ public class Identifier extends Expression
         if(field == null)
         {
             if(!scope.contains(this.name))
-                scope.putVar(new Variable(name, token.getType()));
+                //scope.putVar(new Variable(name, token.getType()));
+                throw new Exception("Variable " + this.name + " was never assigned! " + this.token.getPosition());
             return scope.getVar(name).value;
         }
         if(!(scope.getVar(name).value instanceof Complex))

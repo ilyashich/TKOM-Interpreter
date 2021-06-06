@@ -28,15 +28,4 @@ public class Main
 
 
     }
-
-    public static synchronized void loadLibrary(java.io.File jar) {
-        try {
-            java.net.URL url = jar.toURI().toURL();
-            java.lang.reflect.Method method = java.net.URLClassLoader.class.getDeclaredMethod("addURL", java.net.URL.class);
-            method.setAccessible(true); /*promote the method to public access*/
-            method.invoke(Thread.currentThread().getContextClassLoader(), url);
-        } catch (Exception ex) {
-            throw new RuntimeException("Cannot load library from jar file '" + jar.getAbsolutePath() + "'. Reason: " + ex.getMessage());
-        }
-    }
 }

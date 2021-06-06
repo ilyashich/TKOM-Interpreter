@@ -74,18 +74,12 @@ public class FunctionDefinition extends Statement
 
     private void setVariablesValueInterScope(Scope innerScope, Scope parentScope ,Expression value,String name) throws Exception
     {
-//        Variable variable = innerScope.getVar(name);
-//        TokenType variableType = variable.type;
-        Object val = value.evaluate(parentScope);
-        if(!innerScope.contains(name))
-            innerScope.putVar(new Variable(name));
 
-//        if (val instanceof String && variableType != TokenType.TEXT
-//                || val instanceof Integer && variableType != TokenType.NUMBER
-//                || val instanceof Complex && variableType != TokenType.COMPLEX
-//        ) {
-//            throw new Exception("Podczas wywołania funkcji "+identifier +": Błąd typ wartości inny niż deklarowany typ parametru: " + name);
-//        }
+        Object val = value.evaluate(parentScope);
+        if(innerScope.contains(name))
+            throw new Exception("Duplicated variable " + name + " in function " + identifier + " definition. ");
+        innerScope.putVar(new Variable(name));
+
         innerScope.setVarValue(name, val);
     }
 }

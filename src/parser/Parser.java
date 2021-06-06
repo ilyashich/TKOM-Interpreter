@@ -87,16 +87,15 @@ public class Parser
 
     public Program tryParseProgram() throws Exception
     {
-        FunctionDefinition temp;
-        ImportStatement temp1 = null;
+        Object temp;
         ArrayList<FunctionDefinition> functions = new ArrayList<>();
         ArrayList<ImportStatement> imports = new ArrayList<>();
-        while((temp = tryParseFunction()) != null || (temp1 = tryParseImport()) != null)
+        while((temp = tryParseFunction()) != null || (temp = tryParseImport()) != null)
         {
-            if(temp != null)
-                functions.add(temp);
-            if(temp1 != null)
-                imports.add(temp1);
+            if(temp instanceof FunctionDefinition)
+                functions.add((FunctionDefinition) temp);
+            if(temp instanceof ImportStatement)
+                imports.add((ImportStatement) temp);
         }
         expect(TokenType.EOF);
         return new Program(functions, imports);
@@ -202,7 +201,10 @@ public class Parser
         nextToken();
         Statement statement;
         if((statement = tryParseAssignStatement(identifier)) != null)
+        {
+            expect(TokenType.SEMICOLON);
             return statement;
+        }
 
         return tryParseFunctionCallStatement(identifier);
     }
@@ -230,7 +232,6 @@ public class Parser
 
         if((rhs = tryParseLogicExpression()) == null)
             return null;
-        expect(TokenType.SEMICOLON);
         if(field == null)
             return new AssignStatement(identifier, rhs);
         return new AssignStatement(identifier, rhs, field);
@@ -373,6 +374,7 @@ public class Parser
         if((assignStatement = tryParseAssignStatement(id)) == null)
             throw new ParserException(temp, "Empty iterator assign in for loop!");
 
+        expect(TokenType.SEMICOLON);
 
         Expression logicExpression;
 
@@ -383,7 +385,12 @@ public class Parser
 
         expect(TokenType.SEMICOLON);
 
-        int incrementValue = expect(TokenType.NUMBER).getIntValue();
+        Statement assignIncrement;
+
+        String incr = expect(TokenType.IDENTIFIER).getStringValue();
+
+        if((assignIncrement = tryParseAssignStatement(incr)) == null)
+            throw new ParserException(temp, "Empty iterator assign in for loop!");
 
         expect(TokenType.RIGHT_BRACKET);
 
@@ -394,7 +401,7 @@ public class Parser
         if((statementBlock = tryParseBlockStatement()) == null)
             throw new ParserException(temp, "Empty For Body!");
 
-        return new ForStatement(assignStatement, logicExpression, incrementValue, statementBlock);
+        return new ForStatement(assignStatement, logicExpression, assignIncrement, statementBlock);
 
 
     }

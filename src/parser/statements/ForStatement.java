@@ -3,18 +3,20 @@ package parser.statements;
 import interpreter.Scope;
 import parser.expressions.Expression;
 
+import javax.swing.plaf.nimbus.State;
+
 public class ForStatement extends Statement
 {
     public Statement identifier;
     public Expression logicExpression;
-    public int incrementValue;
+    public Statement increment;
     public StatementBlock statementBlock;
 
-    public ForStatement(Statement identifier, Expression logicExpression, int incrementValue, StatementBlock statementBlock)
+    public ForStatement(Statement identifier, Expression logicExpression, Statement increment, StatementBlock statementBlock)
     {
         this.identifier = identifier;
         this.logicExpression = logicExpression;
-        this.incrementValue = incrementValue;
+        this.increment = increment;
         this.statementBlock = statementBlock;
     }
 
@@ -28,9 +30,9 @@ public class ForStatement extends Statement
         return logicExpression;
     }
 
-    public int getIncrementValue()
+    public Statement getIncrementValue()
     {
-        return incrementValue;
+        return increment;
     }
 
     public StatementBlock getStatementBlock()
@@ -53,8 +55,7 @@ public class ForStatement extends Statement
                 }
                 statement.execute(scope);
             }
-            Object iterValue = (int)scope.getVar(iteratorName).value + incrementValue;
-            scope.setVarValue(iteratorName, iterValue);
+            Object incr = increment.execute(scope);
         }
         return null;
     }

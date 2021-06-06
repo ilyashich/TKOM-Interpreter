@@ -24,12 +24,6 @@ public class Variable extends Expression
     public Variable(AssignStatement assignStatement)
     {
         this.name = assignStatement.identifier;
-//        if(assignStatement.rhs instanceof Value)
-//            this.type = ((Value) assignStatement.rhs).tokenType;
-//        if(assignStatement.rhs instanceof Identifier)
-//            this.type = ((Identifier) assignStatement.rhs).token.getType();
-//        if(assignStatement.rhs instanceof FunctionCallExpression)
-//            this.type = TokenType.NUMBER;
         this.value = null;
     }
 

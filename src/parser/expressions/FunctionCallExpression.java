@@ -63,7 +63,7 @@ public class FunctionCallExpression extends Expression
                     throw new Exception("Argument of function modulus must be Complex " + ((Value) params.get(0)).token.getPosition());
             }
             assert complex instanceof Complex;
-            return ((Complex) complex).modulus();
+            return BigDecimal.valueOf(((Complex) complex).modulus());
         }
 
         if(id.equals("conjugate"))
