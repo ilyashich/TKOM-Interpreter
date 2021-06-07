@@ -1,0 +1,41 @@
+import "hello.txt"
+
+function lol(a, b, c)
+{
+	while(a<=10)
+	{
+		a = a + 1;
+	}
+	return c;
+}
+
+function main()
+{
+	a=5;
+	k = "\r";
+	b=4;
+	d = "Hello";
+	string = "Hello";
+	c=Complex(7,5);
+    print(c);
+    print(k);
+    print(modulus(c));
+    string = string + " " + a + " times";
+    print(string);
+
+    f = Complex(3,4);
+    d = modulus(f);
+    if(d == 5.0)
+    {
+        print("Success");
+    }
+
+    if(a < 7 && b > 3)
+    {
+        c.real = c.real + a;
+        c.imag = c.imag + b;
+    }
+    print(c);
+
+    return 0;
+}

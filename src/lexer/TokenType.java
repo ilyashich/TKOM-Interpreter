@@ -37,8 +37,10 @@ public enum TokenType
 
     IDENTIFIER,
     NUMBER,
+    FLOAT,
     TEXT,
     COMMENT,
+    COMPLEX,
     COMPLEX_REAL_PART,
     COMPLEX_IMAGINARY_PART,
     UNKNOWN,

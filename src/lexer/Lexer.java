@@ -3,11 +3,12 @@ package lexer;
 import exceptions.IdentifierIsTooLargeException;
 import exceptions.IntegerIsTooBigException;
 import exceptions.StringIsTooLargeException;
-import source.Source;
 import source.Position;
+import source.Source;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.HashMap;
 
 public class Lexer
@@ -28,31 +29,27 @@ public class Lexer
         tokens.put("else", TokenType.ELSE);
         tokens.put("for", TokenType.FOR);
         tokens.put("while", TokenType.WHILE);
-        tokens.put("(", TokenType.LEFT_BRACKET);
-        tokens.put(")", TokenType.RIGHT_BRACKET);
-        tokens.put("{", TokenType.LEFT_CURLY_BRACKET);
-        tokens.put("}", TokenType.RIGHT_CURLY_BRACKET);
-        tokens.put("=", TokenType.ASSIGNMENT);
-        tokens.put("==", TokenType.EQUALS);
-        tokens.put(">", TokenType.GREATER);
-        tokens.put("<", TokenType.LESS);
-        tokens.put(">=", TokenType.GREATER_EQUALS);
-        tokens.put("<=", TokenType.LESS_EQUALS);
-        tokens.put("!=", TokenType.NOT_EQUAL);
-        tokens.put(",", TokenType.COMMA);
-        tokens.put(".", TokenType.DOT);
-        tokens.put(";", TokenType.SEMICOLON);
-        tokens.put("/", TokenType.SLASH);
-        tokens.put("\\", TokenType.BACKSLASH);
-        tokens.put("!", TokenType.NOT);
-        tokens.put("+", TokenType.PLUS);
-        tokens.put("-", TokenType.MINUS);
-        tokens.put("*", TokenType.MULTIPLY);
-        tokens.put("&&", TokenType.AND);
-        tokens.put("||", TokenType.OR);
+        tokens.put("Complex", TokenType.COMPLEX);
         tokens.put("real", TokenType.COMPLEX_REAL_PART);
         tokens.put("imag", TokenType.COMPLEX_IMAGINARY_PART);
 
+    }
+
+    public static final HashMap<Character, TokenType> operators;
+    static
+    {
+        operators = new HashMap<>();
+        operators.put('(', TokenType.LEFT_BRACKET);
+        operators.put(')', TokenType.RIGHT_BRACKET);
+        operators.put('{', TokenType.LEFT_CURLY_BRACKET);
+        operators.put('}', TokenType.RIGHT_CURLY_BRACKET);
+        operators.put(',', TokenType.COMMA);
+        operators.put('.', TokenType.DOT);
+        operators.put(';', TokenType.SEMICOLON);
+        operators.put('\\', TokenType.BACKSLASH);
+        operators.put('+', TokenType.PLUS);
+        operators.put('-', TokenType.MINUS);
+        operators.put('*', TokenType.MULTIPLY);
     }
 
     public Lexer(InputStream istream) throws IOException
@@ -68,17 +65,8 @@ public class Lexer
 
     private void skipWhites() throws IOException
     {
-        do {
-            if (currentChar == Source.EOF) break;
             while (Character.isWhitespace(currentChar))
                 nextChar();
-        } while (Character.isWhitespace(currentChar) || currentChar == Source.EOF);
-    }
-
-    private void skipUnknown() throws IOException
-    {
-        while(!Character.isWhitespace(currentChar))
-            nextChar();
     }
 
 
@@ -91,16 +79,20 @@ public class Lexer
         Token token;
         token = buildComment();
         if(token != null) return token;
+
         token = buildNumber();
         if(token != null) return token;
+
         token = buildConstString();
         if(token != null) return token;
+
         token = buildIdentifierOrKeyword();
         if(token != null) return token;
+
         token = buildOperator();
         if(token != null) return token;
+
         token = new Token(currentChar, TokenType.UNKNOWN, textPosition);
-        skipUnknown();
         return token;
 
     }
@@ -109,36 +101,116 @@ public class Lexer
     {
         identifier = new StringBuilder();
         long val = 0;
-        if(Character.isDigit(currentChar))
+        if (!Character.isDigit(currentChar))
+            return null;
+
+        if (currentChar == '0')
         {
+            nextChar();
+
+            if(currentChar == '.')
+            {
+                nextChar();
+                if(!Character.isDigit(currentChar))
+                {
+                    while(!Character.isWhitespace(currentChar) && currentChar != Source.EOF)
+                    {
+                        nextChar();
+                    }
+                    return new Token(TokenType.UNKNOWN, textPosition);
+                }
+                identifier.append("0.");
+                while (Character.isDigit(currentChar))
+                {
+                    identifier.append((char)currentChar);
+                    nextChar();
+                }
+
+                BigDecimal dvalue = new BigDecimal(identifier.toString());
+                return new Token(dvalue, TokenType.FLOAT, textPosition);
+            }
+
+            if(!Character.isDigit(currentChar))
+                return new Token(0, TokenType.NUMBER, textPosition);
+
             while(Character.isDigit(currentChar))
             {
-                val = val * 10 + (currentChar - '0');
-                identifier.append((char)currentChar);
                 nextChar();
             }
-            if(val > Integer.MAX_VALUE)
-                throw new IntegerIsTooBigException(textPosition);
-            int value = Math.toIntExact(val);
-            if(identifier.charAt(0) == '0' && identifier.length() > 1)
-                return new Token(identifier.toString(), TokenType.UNKNOWN, textPosition);
-            else
-                return new Token(value, TokenType.NUMBER, textPosition);
+            return new Token(TokenType.UNKNOWN, textPosition);
         }
-        return null;
+        else
+        {
+            while (Character.isDigit(currentChar) && val < Integer.MAX_VALUE)
+            {
+                val = val * 10 + (currentChar - '0');
+                nextChar();
+            }
+            if(currentChar == '.')
+            {
+                nextChar();
+                identifier = new StringBuilder();
+                identifier.append(val);
+                identifier.append(".");
+
+                if(!Character.isDigit(currentChar))
+                {
+                    while(!Character.isWhitespace(currentChar))
+                    {
+                        nextChar();
+                    }
+                    return new Token(TokenType.UNKNOWN, textPosition);
+                }
+                while (Character.isDigit(currentChar))
+                {
+                    identifier.append((char)currentChar);
+                    nextChar();
+                }
+                BigDecimal dvalue = new BigDecimal(identifier.toString());
+                return new Token(dvalue, TokenType.FLOAT, textPosition);
+            }
+        }
+
+        if(val > Integer.MAX_VALUE)
+            throw new IntegerIsTooBigException(textPosition);
+        else
+            return new Token((int) val, TokenType.NUMBER, textPosition);
     }
 
     private Token buildConstString() throws IOException, StringIsTooLargeException
     {
-        identifier = new StringBuilder();
         if(currentChar == '"')
         {
+            identifier = new StringBuilder();
+
             nextChar();
             do
             {
                 if(identifier.length() < MAX_STRING_LENGTH)
                 {
-                    identifier.append((char) currentChar);
+                    if(currentChar == '\\')
+                    {
+                        nextChar();
+                        switch (currentChar)
+                        {
+                            case '"':
+                                identifier.append('"');
+                                break;
+                            case 'n':
+                                identifier.append('\n');
+                                break;
+                            case 't':
+                                identifier.append('\t');
+                                break;
+                            case '\\':
+                                identifier.append('\\');
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    else
+                        identifier.append((char) currentChar);
                 }
                 else
                     throw new StringIsTooLargeException(textPosition);
@@ -153,12 +225,13 @@ public class Lexer
 
     private Token buildIdentifierOrKeyword() throws IOException, IdentifierIsTooLargeException
     {
-        identifier = new StringBuilder();
+
         if(Character.isLetter(currentChar) || currentChar == '_')
         {
+            identifier = new StringBuilder();
 
             do{
-                if(identifier.length() <= MAX_STRING_LENGTH)
+                if(identifier.length() < MAX_STRING_LENGTH)
                 {
                     identifier.append((char) currentChar);
                 }
@@ -181,18 +254,6 @@ public class Lexer
         int value = currentChar;
         switch (currentChar)
         {
-            case '(':
-                nextChar();
-                return new Token(value,TokenType.LEFT_BRACKET, textPosition);
-            case ')':
-                nextChar();
-                return new Token(value,TokenType.RIGHT_BRACKET, textPosition);
-            case '{':
-                nextChar();
-                return new Token(value,TokenType.LEFT_CURLY_BRACKET, textPosition);
-            case '}':
-                nextChar();
-                return new Token(value,TokenType.RIGHT_CURLY_BRACKET, textPosition);
             case '=':
                 nextChar();
                 if (currentChar == '=')
@@ -238,21 +299,6 @@ public class Lexer
                 }
                 else
                     return new Token(value,TokenType.UNKNOWN, textPosition);
-            case '+':
-                nextChar();
-                return new Token(value,TokenType.PLUS, textPosition);
-            case '-':
-                nextChar();
-                return new Token(value,TokenType.MINUS, textPosition);
-            case '*':
-                nextChar();
-                return new Token(value,TokenType.MULTIPLY, textPosition);
-            case '/':
-                nextChar();
-                return new Token(value,TokenType.SLASH, textPosition);
-            case '\\':
-                nextChar();
-                return new Token(value,TokenType.BACKSLASH, textPosition);
             case '|':
                 nextChar();
                 if (currentChar == '|')
@@ -262,16 +308,13 @@ public class Lexer
                 }
                 else
                     return new Token(value,TokenType.UNKNOWN, textPosition);
-            case '.':
-                nextChar();
-                return new Token(value,TokenType.DOT, textPosition);
-            case ',':
-                nextChar();
-                return new Token(value,TokenType.COMMA, textPosition);
-            case ';':
-                nextChar();
-                return new Token(value,TokenType.SEMICOLON, textPosition);
             default:
+                if(operators.containsKey((char)currentChar))
+                {
+                    int temp = currentChar;
+                    nextChar();
+                    return new Token(temp, operators.get((char) temp), textPosition);
+                }
                 return null;
 
         }

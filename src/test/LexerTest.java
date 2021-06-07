@@ -5,9 +5,10 @@ import lexer.Token;
 import lexer.TokenType;
 import org.junit.Assert;
 import org.junit.Test;
-import source.Position;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
@@ -28,44 +29,7 @@ public class LexerTest
             tokens.add(token);
         return tokens;
     }
-    @Test
-    public void fromFile() throws Exception
-    {
-        File file = new File("src\\test\\test.txt");
-        InputStream input = new FileInputStream(file);
-        ArrayList<Token> tokens = getTokens(input);
 
-        Position position = new Position(3, 12);
-        int i = 0;
-        Assert.assertEquals(TokenType.FUNCTION, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.TEXT, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.COMMENT, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.IDENTIFIER, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.ASSIGNMENT, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.NUMBER, tokens.get(i).getType());
-        Assert.assertEquals(position.column, tokens.get(i).getPosition().column);
-        Assert.assertEquals(position.line, tokens.get(i).getPosition().line);
-        ++i;
-        Assert.assertEquals(TokenType.RETURN, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.NOT_EQUAL, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.NUMBER, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.IF, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.IDENTIFIER, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.MINUS, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.NUMBER, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.WHILE, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.LEFT_BRACKET, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.RIGHT_BRACKET, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.FOR, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.LEFT_CURLY_BRACKET, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.IDENTIFIER, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.ASSIGNMENT, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.NUMBER, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.RIGHT_CURLY_BRACKET, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.UNKNOWN, tokens.get(i++).getType());
-        Assert.assertEquals(TokenType.EOF, tokens.get(i).getType());
-
-    }
     @Test
     public void comment() throws Exception
     {
@@ -77,13 +41,30 @@ public class LexerTest
     @Test
     public void number() throws Exception
     {
-        String numbers = "25000025 000000025 02 0";
+        String numbers = "25000025 000000025 02 0    12";
         InputStream input = new ByteArrayInputStream(numbers.getBytes(StandardCharsets.UTF_8));
         ArrayList<Token> tokens = getTokens(input);
         Assert.assertEquals(TokenType.NUMBER, tokens.get(0).getType());
         Assert.assertEquals(TokenType.UNKNOWN, tokens.get(1).getType());
         Assert.assertEquals(TokenType.UNKNOWN, tokens.get(2).getType());
         Assert.assertEquals(TokenType.NUMBER, tokens.get(3).getType());
+        Assert.assertEquals(TokenType.NUMBER, tokens.get(4).getType());
+        Assert.assertEquals(12, tokens.get(4).getIntValue());
+    }
+    @Test
+    public void doubleNumber() throws Exception
+    {
+        String numbers = "5.0005456 25 0.rey 1.5 0..3456dfh";
+        InputStream input = new ByteArrayInputStream(numbers.getBytes(StandardCharsets.UTF_8));
+        ArrayList<Token> tokens = getTokens(input);
+        Assert.assertEquals(TokenType.FLOAT, tokens.get(0).getType());
+        Assert.assertEquals(new BigDecimal("5.0005456"), tokens.get(0).getDoubleValue());
+        Assert.assertEquals(TokenType.NUMBER, tokens.get(1).getType());
+        Assert.assertEquals(25, tokens.get(1).getIntValue());
+        Assert.assertEquals(TokenType.UNKNOWN, tokens.get(2).getType());
+        Assert.assertEquals(TokenType.FLOAT, tokens.get(3).getType());
+        Assert.assertEquals(new BigDecimal("1.5"), tokens.get(3).getDoubleValue());
+        Assert.assertEquals(TokenType.UNKNOWN, tokens.get(4).getType());
     }
     @Test
     public void consString() throws Exception
@@ -92,6 +73,7 @@ public class LexerTest
         InputStream input = new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
         ArrayList<Token> tokens = getTokens(input);
         Assert.assertEquals(TokenType.TEXT, tokens.get(0).getType());
+        Assert.assertEquals(TokenType.TEXT, tokens.get(1).getType());
         Assert.assertEquals("Hello", tokens.get(1).getStringValue());
         Assert.assertEquals(TokenType.EOF, tokens.get(2).getType());
     }
@@ -168,5 +150,16 @@ public class LexerTest
         ArrayList<Token> tokens = getTokens(input);
         Assert.assertEquals(TokenType.COMPLEX_REAL_PART, tokens.get(0).getType());
         Assert.assertEquals(TokenType.COMPLEX_IMAGINARY_PART, tokens.get(1).getType());
+    }
+    @Test
+    public void escapingString() throws Exception
+    {
+        String escaping = "\"\\\"Hello\\\"\" \"Bye\\tBye\"";
+        InputStream input = new ByteArrayInputStream(escaping.getBytes(StandardCharsets.UTF_8));
+        ArrayList<Token> tokens = getTokens(input);
+        Assert.assertEquals(TokenType.TEXT, tokens.get(0).getType());
+        Assert.assertEquals(TokenType.TEXT, tokens.get(1).getType());
+        Assert.assertEquals("\"Hello\"", tokens.get(0).getStringValue());
+        Assert.assertEquals("Bye\tBye", tokens.get(1).getStringValue());
     }
 }
