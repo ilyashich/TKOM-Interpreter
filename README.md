@@ -1,1 +1,1 @@
-Język programowania z wbudowanym typem liczb zespolonych
+TKOM project. Interpreter for custom language with built-in complex variable type
